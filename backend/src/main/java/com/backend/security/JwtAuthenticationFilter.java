@@ -21,7 +21,6 @@ import java.io.IOException;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
-
     private final CustomUserDetailsService customUserDetailsService;
 
     @Override
@@ -31,76 +30,182 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             FilterChain filterChain
     ) throws ServletException, IOException {
 
+        // ============================================================
+        // 1. GET AUTHORIZATION HEADER
+        // ============================================================
+
         String authorizationHeader =
                 request.getHeader("Authorization");
 
-        // Check whether the Authorization header exists
-        // and starts with "Bearer "
+        System.out.println("========================================");
+        System.out.println("REQUEST URL: " + request.getRequestURI());
+        System.out.println("AUTHORIZATION HEADER: " + authorizationHeader);
+
+
+        // ============================================================
+        // 2. CHECK BEARER TOKEN
+        // ============================================================
+
         if (authorizationHeader == null ||
                 !authorizationHeader.startsWith("Bearer ")) {
+
+            System.out.println("NO BEARER TOKEN FOUND");
 
             filterChain.doFilter(request, response);
             return;
         }
 
-        // Remove "Bearer " from the beginning of the header
+
+        // ============================================================
+        // 3. EXTRACT JWT
+        // ============================================================
+
         String jwtToken =
                 authorizationHeader.substring(7);
+
+        System.out.println("JWT TOKEN RECEIVED");
+
+
+        // ============================================================
+        // 4. EXTRACT USERNAME / EMAIL FROM TOKEN
+        // ============================================================
 
         String username;
 
         try {
 
-            // Extract email/username from JWT
-            username = jwtService.extractUsername(jwtToken);
+            username =
+                    jwtService.extractUsername(jwtToken);
+
+            System.out.println(
+                    "USERNAME FROM JWT: " + username
+            );
 
         } catch (Exception exception) {
 
-            // If token is invalid, continue the request.
-            // Spring Security will reject protected endpoints.
+            System.out.println(
+                    "ERROR: COULD NOT EXTRACT USERNAME FROM JWT"
+            );
+
+            exception.printStackTrace();
+
             filterChain.doFilter(request, response);
             return;
         }
 
-        // Check whether a user is already authenticated
+
+        // ============================================================
+        // 5. CHECK WHETHER USER IS ALREADY AUTHENTICATED
+        // ============================================================
+
         if (username != null &&
                 SecurityContextHolder
                         .getContext()
                         .getAuthentication() == null) {
 
-            // Load user from database
-            UserDetails userDetails =
-                    customUserDetailsService
-                            .loadUserByUsername(username);
+            try {
 
-            // Validate JWT against the user details
-            if (jwtService.isTokenValid(
-                    jwtToken,
-                    userDetails
-            )) {
+                // ====================================================
+                // 6. LOAD USER FROM DATABASE
+                // ====================================================
 
-                // Create authentication object
-                UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(
-                                userDetails,
-                                null,
-                                userDetails.getAuthorities()
-                        );
+                UserDetails userDetails =
+                        customUserDetailsService
+                                .loadUserByUsername(username);
 
-                // Attach request details
-                authentication.setDetails(
-                        new WebAuthenticationDetailsSource()
-                                .buildDetails(request)
+                System.out.println(
+                        "USER FOUND IN DATABASE: " +
+                                userDetails.getUsername()
                 );
 
-                // Tell Spring Security that the user is authenticated
-                SecurityContextHolder
-                        .getContext()
-                        .setAuthentication(authentication);
+                System.out.println(
+                        "USER AUTHORITIES: " +
+                                userDetails.getAuthorities()
+                );
+
+
+                // ====================================================
+                // 7. VALIDATE TOKEN
+                // ====================================================
+
+                boolean tokenValid =
+                        jwtService.isTokenValid(
+                                jwtToken,
+                                userDetails
+                        );
+
+                System.out.println(
+                        "IS JWT VALID: " + tokenValid
+                );
+
+
+                // ====================================================
+                // 8. CREATE AUTHENTICATION
+                // ====================================================
+
+                if (tokenValid) {
+
+                    UsernamePasswordAuthenticationToken authentication =
+                            new UsernamePasswordAuthenticationToken(
+                                    userDetails,
+                                    null,
+                                    userDetails.getAuthorities()
+                            );
+
+                    authentication.setDetails(
+                            new WebAuthenticationDetailsSource()
+                                    .buildDetails(request)
+                    );
+
+
+                    // =================================================
+                    // 9. STORE AUTHENTICATION IN SECURITY CONTEXT
+                    // =================================================
+
+                    SecurityContextHolder
+                            .getContext()
+                            .setAuthentication(authentication);
+
+                    System.out.println(
+                            "AUTHENTICATION SET SUCCESSFULLY"
+                    );
+
+                } else {
+
+                    System.out.println(
+                            "JWT TOKEN IS INVALID OR EXPIRED"
+                    );
+                }
+
+            } catch (Exception exception) {
+
+                System.out.println(
+                        "ERROR WHILE AUTHENTICATING USER"
+                );
+
+                exception.printStackTrace();
             }
         }
 
-        // Continue to the next filter/controller
+
+        // ============================================================
+        // 10. PRINT FINAL SECURITY CONTEXT
+        // ============================================================
+
+        System.out.println(
+                "FINAL AUTHENTICATION: " +
+                        SecurityContextHolder
+                                .getContext()
+                                .getAuthentication()
+        );
+
+        System.out.println("========================================");
+
+
+        // ============================================================
+        // 11. CONTINUE REQUEST
+        // ============================================================
+
         filterChain.doFilter(request, response);
     }
 }

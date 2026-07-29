@@ -1,11 +1,13 @@
 package com.backend.category.controller;
 
 import com.backend.category.dto.request.CategoryCreateRequest;
+import com.backend.category.dto.request.CategoryUpdateRequest;
 import com.backend.category.dto.response.CategoryResponse;
 import com.backend.category.service.CategoryService;
 
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
+
+import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,77 +17,67 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/categories")
-@SecurityRequirement(name = "Bearer Authentication")
+@RequiredArgsConstructor
 public class CategoryController {
 
     private final CategoryService categoryService;
 
-    public CategoryController(CategoryService categoryService) {
-        this.categoryService = categoryService;
-    }
-
 
     // ============================================================
-    // CREATE CATEGORY
+    // CREATE
     // ============================================================
 
     @PostMapping
     public ResponseEntity<CategoryResponse> createCategory(
-            @Valid @RequestBody CategoryCreateRequest request) {
+            @Valid @RequestBody CategoryCreateRequest request
+    ) {
 
         CategoryResponse response =
                 categoryService.createCategory(request);
 
-        return new ResponseEntity<>(
-                response,
-                HttpStatus.CREATED
-        );
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(response);
     }
 
 
     // ============================================================
-    // GET ALL CATEGORIES
+    // GET ALL ACTIVE
     // ============================================================
 
     @GetMapping
     public ResponseEntity<List<CategoryResponse>> getAllCategories() {
 
-        List<CategoryResponse> response =
-                categoryService.getAllCategories();
-
-        return new ResponseEntity<>(
-                response,
-                HttpStatus.OK
+        return ResponseEntity.ok(
+                categoryService.getAllCategories()
         );
     }
 
 
     // ============================================================
-    // GET CATEGORY BY ID
+    // GET BY ID
     // ============================================================
 
     @GetMapping("/{id}")
     public ResponseEntity<CategoryResponse> getCategoryById(
-            @PathVariable Long id) {
+            @PathVariable Long id
+    ) {
 
-        CategoryResponse response =
-                categoryService.getCategoryById(id);
-
-        return new ResponseEntity<>(
-                response,
-                HttpStatus.OK
+        return ResponseEntity.ok(
+                categoryService.getCategoryById(id)
         );
     }
 
 
     // ============================================================
-    // UPDATE CATEGORY
+    // UPDATE
     // ============================================================
 
     @PutMapping("/{id}")
     public ResponseEntity<CategoryResponse> updateCategory(
             @PathVariable Long id,
-            @Valid @RequestBody CategoryCreateRequest request) {
+            @Valid @RequestBody CategoryUpdateRequest request
+    ) {
 
         CategoryResponse response =
                 categoryService.updateCategory(
@@ -93,25 +85,21 @@ public class CategoryController {
                         request
                 );
 
-        return new ResponseEntity<>(
-                response,
-                HttpStatus.OK
-        );
+        return ResponseEntity.ok(response);
     }
 
 
     // ============================================================
-    // DELETE CATEGORY
+    // DELETE
     // ============================================================
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteCategory(
-            @PathVariable Long id) {
+            @PathVariable Long id
+    ) {
 
         categoryService.deleteCategory(id);
 
-        return new ResponseEntity<>(
-                HttpStatus.NO_CONTENT
-        );
+        return ResponseEntity.noContent().build();
     }
 }
