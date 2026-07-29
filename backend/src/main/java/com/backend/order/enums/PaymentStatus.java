@@ -1,4 +1,8 @@
 package com.backend.order.enums;
 
-public class PaymentStatus {
+public enum PaymentStatus {
+
+    PENDING,
+    PAID,
+    FAILED
 }

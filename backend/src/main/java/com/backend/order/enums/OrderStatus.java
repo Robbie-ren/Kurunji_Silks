@@ -1,4 +1,11 @@
 package com.backend.order.enums;
 
-public class OrderStatus {
+public enum OrderStatus {
+
+    PLACED,
+    CONFIRMED,
+    PACKED,
+    SHIPPED,
+    DELIVERED,
+    CANCELLED
 }

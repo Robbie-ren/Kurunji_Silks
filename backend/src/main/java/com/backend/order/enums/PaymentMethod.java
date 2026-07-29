@@ -1,4 +1,7 @@
 package com.backend.order.enums;
 
-public class PaymentMethod {
+public enum PaymentMethod {
+
+    COD,
+    ONLINE
 }
