@@ -22,7 +22,7 @@ public class Category {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true, length = 100)
+    @Column(nullable = false, length = 255)
     private String name;
 
     @Column(columnDefinition = "TEXT")
@@ -40,7 +40,9 @@ public class Category {
 
     @PrePersist
     protected void onCreate() {
+
         LocalDateTime now = LocalDateTime.now();
+
         createdAt = now;
         updatedAt = now;
 
@@ -51,6 +53,7 @@ public class Category {
 
     @PreUpdate
     protected void onUpdate() {
+
         updatedAt = LocalDateTime.now();
     }
 }
