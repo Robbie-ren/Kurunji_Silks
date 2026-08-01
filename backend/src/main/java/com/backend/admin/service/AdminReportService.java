@@ -1,4 +1,19 @@
 package com.backend.admin.service;
 
-public class AdminReportService {
+import com.backend.admin.dto.response.CustomerReportResponse;
+import com.backend.admin.dto.response.LowStockProductResponse;
+import com.backend.admin.dto.response.ProductSalesReportResponse;
+import com.backend.admin.dto.response.SalesSummaryResponse;
+
+import java.util.List;
+
+public interface AdminReportService {
+
+    SalesSummaryResponse getSalesSummary();
+
+    List<ProductSalesReportResponse> getProductSalesReport();
+
+    List<LowStockProductResponse> getLowStockProducts();
+
+    List<CustomerReportResponse> getCustomerReport();
 }
