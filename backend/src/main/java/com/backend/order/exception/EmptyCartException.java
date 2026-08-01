@@ -1,4 +1,8 @@
 package com.backend.order.exception;
 
-public class EmptyCartException {
+public class EmptyCartException extends RuntimeException {
+
+    public EmptyCartException(String message) {
+        super(message);
+    }
 }

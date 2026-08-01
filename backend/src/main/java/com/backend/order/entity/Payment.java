@@ -3,11 +3,7 @@ package com.backend.order.entity;
 import com.backend.order.enums.PaymentMethod;
 import com.backend.order.enums.PaymentStatus;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -25,7 +21,7 @@ public class Payment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "order_id", nullable = false, unique = true)
     private Order order;
 
@@ -33,15 +29,14 @@ public class Payment {
     private BigDecimal amount;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "payment_method", nullable = false, length = 20)
+    @Column(name = "payment_method", nullable = false)
     private PaymentMethod paymentMethod;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "payment_status", nullable = false, length = 20)
-    @Builder.Default
-    private PaymentStatus paymentStatus = PaymentStatus.PENDING;
+    @Column(name = "payment_status", nullable = false)
+    private PaymentStatus paymentStatus;
 
-    @Column(name = "transaction_id", length = 255)
+    @Column(name = "transaction_id")
     private String transactionId;
 
     @Column(name = "paid_at")
@@ -53,9 +48,5 @@ public class Payment {
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
-
-        if (paymentStatus == null) {
-            paymentStatus = PaymentStatus.PENDING;
-        }
     }
 }

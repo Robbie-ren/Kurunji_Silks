@@ -1,32 +1,18 @@
 package com.backend.order.repository;
 
 import com.backend.order.entity.Order;
-import com.backend.order.enums.OrderStatus;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface OrderRepository extends JpaRepository<Order, Long> {
 
     Optional<Order> findByOrderNumber(String orderNumber);
 
-    Page<Order> findByUserId(
-            Long userId,
-            Pageable pageable
-    );
+    List<Order> findByUserIdOrderByCreatedAtDesc(Long userId);
 
-    Page<Order> findByUserIdAndOrderStatus(
-            Long userId,
-            OrderStatus orderStatus,
-            Pageable pageable
-    );
-
-    Page<Order> findByOrderStatus(
-            OrderStatus orderStatus,
-            Pageable pageable
-    );
+    Optional<Order> findByIdAndUserId(Long id, Long userId);
 
     boolean existsByOrderNumber(String orderNumber);
 }

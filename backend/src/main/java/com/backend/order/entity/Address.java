@@ -2,11 +2,7 @@ package com.backend.order.entity;
 
 import com.backend.auth.entity.User;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
@@ -23,11 +19,11 @@ public class Address {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(name = "full_name", nullable = false, length = 100)
+    @Column(name = "full_name", nullable = false, length = 255)
     private String fullName;
 
     @Column(nullable = false, length = 20)
@@ -42,7 +38,7 @@ public class Address {
     @Column(nullable = false, length = 100)
     private String state;
 
-    @Column(nullable = false, length = 10)
+    @Column(nullable = false, length = 20)
     private String pincode;
 
     @Column(length = 255)

@@ -4,9 +4,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -30,181 +28,57 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             FilterChain filterChain
     ) throws ServletException, IOException {
 
-        // ============================================================
-        // 1. GET AUTHORIZATION HEADER
-        // ============================================================
+        String authorizationHeader = request.getHeader("Authorization");
 
-        String authorizationHeader =
-                request.getHeader("Authorization");
-
-        System.out.println("========================================");
-        System.out.println("REQUEST URL: " + request.getRequestURI());
-        System.out.println("AUTHORIZATION HEADER: " + authorizationHeader);
-
-
-        // ============================================================
-        // 2. CHECK BEARER TOKEN
-        // ============================================================
-
+        // No JWT provided
         if (authorizationHeader == null ||
                 !authorizationHeader.startsWith("Bearer ")) {
-
-            System.out.println("NO BEARER TOKEN FOUND");
 
             filterChain.doFilter(request, response);
             return;
         }
 
-
-        // ============================================================
-        // 3. EXTRACT JWT
-        // ============================================================
-
-        String jwtToken =
-                authorizationHeader.substring(7);
-
-        System.out.println("JWT TOKEN RECEIVED");
-
-
-        // ============================================================
-        // 4. EXTRACT USERNAME / EMAIL FROM TOKEN
-        // ============================================================
-
+        String jwtToken = authorizationHeader.substring(7);
         String username;
 
         try {
 
-            username =
-                    jwtService.extractUsername(jwtToken);
-
-            System.out.println(
-                    "USERNAME FROM JWT: " + username
-            );
+            username = jwtService.extractUsername(jwtToken);
 
         } catch (Exception exception) {
-
-            System.out.println(
-                    "ERROR: COULD NOT EXTRACT USERNAME FROM JWT"
-            );
-
-            exception.printStackTrace();
 
             filterChain.doFilter(request, response);
             return;
         }
-
-
-        // ============================================================
-        // 5. CHECK WHETHER USER IS ALREADY AUTHENTICATED
-        // ============================================================
 
         if (username != null &&
                 SecurityContextHolder
                         .getContext()
                         .getAuthentication() == null) {
 
-            try {
+            UserDetails userDetails =
+                    customUserDetailsService
+                            .loadUserByUsername(username);
 
-                // ====================================================
-                // 6. LOAD USER FROM DATABASE
-                // ====================================================
+            if (jwtService.isTokenValid(jwtToken, userDetails)) {
 
-                UserDetails userDetails =
-                        customUserDetailsService
-                                .loadUserByUsername(username);
-
-                System.out.println(
-                        "USER FOUND IN DATABASE: " +
-                                userDetails.getUsername()
-                );
-
-                System.out.println(
-                        "USER AUTHORITIES: " +
+                UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(
+                                userDetails,
+                                null,
                                 userDetails.getAuthorities()
-                );
-
-
-                // ====================================================
-                // 7. VALIDATE TOKEN
-                // ====================================================
-
-                boolean tokenValid =
-                        jwtService.isTokenValid(
-                                jwtToken,
-                                userDetails
                         );
 
-                System.out.println(
-                        "IS JWT VALID: " + tokenValid
+                authentication.setDetails(
+                        new WebAuthenticationDetailsSource()
+                                .buildDetails(request)
                 );
 
-
-                // ====================================================
-                // 8. CREATE AUTHENTICATION
-                // ====================================================
-
-                if (tokenValid) {
-
-                    UsernamePasswordAuthenticationToken authentication =
-                            new UsernamePasswordAuthenticationToken(
-                                    userDetails,
-                                    null,
-                                    userDetails.getAuthorities()
-                            );
-
-                    authentication.setDetails(
-                            new WebAuthenticationDetailsSource()
-                                    .buildDetails(request)
-                    );
-
-
-                    // =================================================
-                    // 9. STORE AUTHENTICATION IN SECURITY CONTEXT
-                    // =================================================
-
-                    SecurityContextHolder
-                            .getContext()
-                            .setAuthentication(authentication);
-
-                    System.out.println(
-                            "AUTHENTICATION SET SUCCESSFULLY"
-                    );
-
-                } else {
-
-                    System.out.println(
-                            "JWT TOKEN IS INVALID OR EXPIRED"
-                    );
-                }
-
-            } catch (Exception exception) {
-
-                System.out.println(
-                        "ERROR WHILE AUTHENTICATING USER"
-                );
-
-                exception.printStackTrace();
+                SecurityContextHolder
+                        .getContext()
+                        .setAuthentication(authentication);
             }
         }
-
-
-        // ============================================================
-        // 10. PRINT FINAL SECURITY CONTEXT
-        // ============================================================
-
-        System.out.println(
-                "FINAL AUTHENTICATION: " +
-                        SecurityContextHolder
-                                .getContext()
-                                .getAuthentication()
-        );
-
-        System.out.println("========================================");
-
-
-        // ============================================================
-        // 11. CONTINUE REQUEST
-        // ============================================================
 
         filterChain.doFilter(request, response);
     }

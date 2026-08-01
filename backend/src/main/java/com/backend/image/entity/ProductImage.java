@@ -23,11 +23,7 @@ public class ProductImage {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "product_id", nullable = false)
-    private Product product;
-
-    @Column(name = "image_url", nullable = false, length = 500)
+    @Column(name = "image_url", nullable = false)
     private String imageUrl;
 
     @Column(name = "main_image", nullable = false)
@@ -37,8 +33,13 @@ public class ProductImage {
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_id", nullable = false)
+    private Product product;
+
     @PrePersist
     protected void onCreate() {
+
         createdAt = LocalDateTime.now();
 
         if (mainImage == null) {
