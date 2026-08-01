@@ -7,6 +7,8 @@ import com.backend.admin.dto.response.SalesSummaryResponse;
 import com.backend.admin.service.AdminReportService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.Page;
+import org.springframework.http.ResponseEntity;
 
 import java.util.List;
 
@@ -33,7 +35,12 @@ public class AdminReportController {
     }
 
     @GetMapping("/customers")
-    public List<CustomerReportResponse> getCustomerReport() {
-        return adminReportService.getCustomerReport();
+    public ResponseEntity<Page<CustomerReportResponse>> getCustomerReport(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        return ResponseEntity.ok(
+                adminReportService.getCustomerReport(page, size)
+        );
     }
 }

@@ -22,7 +22,11 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     boolean existsByOrderNumber(String orderNumber);
 
-    @Query("SELECT COALESCE(SUM(o.totalAmount), 0) FROM Order o")
+    @Query("""
+    SELECT COALESCE(SUM(o.totalAmount), 0)
+    FROM Order o
+    WHERE o.orderStatus = com.backend.order.enums.OrderStatus.DELIVERED
+    """)
     BigDecimal getTotalRevenue();
 
     @Query("SELECT COUNT(o) FROM Order o WHERE o.orderStatus = :status")
