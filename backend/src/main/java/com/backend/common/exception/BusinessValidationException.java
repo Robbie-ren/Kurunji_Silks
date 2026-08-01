@@ -1,4 +1,8 @@
 package com.backend.common.exception;
 
-public class BusinessValidationException {
+public class BusinessValidationException extends RuntimeException {
+
+    public BusinessValidationException(String message) {
+        super(message);
+    }
 }

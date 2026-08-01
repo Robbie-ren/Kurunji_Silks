@@ -3,8 +3,8 @@ package com.backend.category.service;
 import com.backend.category.dto.request.CategoryCreateRequest;
 import com.backend.category.dto.request.CategoryUpdateRequest;
 import com.backend.category.dto.response.CategoryResponse;
-
-import java.util.List;
+import com.backend.common.dto.PageResponse;
+import org.springframework.data.domain.Pageable;
 
 public interface CategoryService {
 
@@ -12,7 +12,9 @@ public interface CategoryService {
             CategoryCreateRequest request
     );
 
-    List<CategoryResponse> getAllCategories();
+    PageResponse<CategoryResponse> getAllCategories(
+            Pageable pageable
+    );
 
     CategoryResponse getCategoryById(
             Long id
