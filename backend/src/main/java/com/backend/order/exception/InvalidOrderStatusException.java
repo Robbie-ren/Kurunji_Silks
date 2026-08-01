@@ -1,6 +1,8 @@
 package com.backend.order.exception;
 
-public class InvalidOrderStatusException extends RuntimeException {
+import com.backend.common.exception.BusinessValidationException;
+
+public class InvalidOrderStatusException extends BusinessValidationException {
 
     public InvalidOrderStatusException(String message) {
         super(message);

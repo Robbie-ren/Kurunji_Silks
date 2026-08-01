@@ -1,6 +1,8 @@
 package com.backend.category.exception;
 
-public class CategoryAlreadyExistsException extends RuntimeException {
+import com.backend.common.exception.DuplicateResourceException;
+
+public class CategoryAlreadyExistsException extends DuplicateResourceException {
 
     public CategoryAlreadyExistsException(String message) {
         super(message);

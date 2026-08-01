@@ -1,6 +1,8 @@
 package com.backend.product.exception;
 
-public class InsufficientStockException extends RuntimeException {
+import com.backend.common.exception.BusinessValidationException;
+
+public class InsufficientStockException extends BusinessValidationException {
 
     public InsufficientStockException(String message) {
         super(message);

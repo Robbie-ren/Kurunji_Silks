@@ -23,56 +23,19 @@ public class SecurityConfig {
     private final CorsConfigurationSource corsConfigurationSource;
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http)
-            throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
         http
-
-                // =====================================================
-                // CORS
-                // =====================================================
-
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
-
-                // =====================================================
-                // Disable CSRF (JWT Authentication)
-                // =====================================================
-
                 .csrf(AbstractHttpConfigurer::disable)
-
-                // =====================================================
-                // Stateless Session
-                // =====================================================
-
                 .sessionManagement(session ->
-                        session.sessionCreationPolicy(
-                                SessionCreationPolicy.STATELESS
-                        )
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
-
-                // =====================================================
-                // Authorization Rules
-                // =====================================================
-
                 .authorizeHttpRequests(auth -> auth
 
-                        // -----------------------------------------------
-                        // Allow Browser CORS Preflight
-                        // -----------------------------------------------
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        .requestMatchers(HttpMethod.OPTIONS, "/**")
-                        .permitAll()
-
-                        // -----------------------------------------------
-                        // Authentication APIs
-                        // -----------------------------------------------
-
-                        .requestMatchers("/api/auth/**")
-                        .permitAll()
-
-                        // -----------------------------------------------
-                        // Swagger
-                        // -----------------------------------------------
+                        .requestMatchers("/api/auth/**").permitAll()
 
                         .requestMatchers(
                                 "/swagger-ui/**",
@@ -80,78 +43,24 @@ public class SecurityConfig {
                                 "/v3/api-docs/**"
                         ).permitAll()
 
-                        // -----------------------------------------------
-                        // Spring Error Endpoint
-                        // -----------------------------------------------
+                        .requestMatchers("/error").permitAll()
 
-                        .requestMatchers("/error")
-                        .permitAll()
+                        // Public customer browsing
+                        .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/images/**").permitAll()
 
-                        // -----------------------------------------------
-                        // PUBLIC PRODUCT BROWSING
-                        // -----------------------------------------------
+                        // Admin APIs
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
-                        .requestMatchers(
-                                HttpMethod.GET,
-                                "/api/products/**",
-                                "/api/categories/**",
-                                "/api/images/**"
-                        ).permitAll()
+                        // Customer APIs
+                        .requestMatchers("/api/cart/**", "/api/orders/**")
+                        .hasAnyRole("CUSTOMER", "ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/products/*/images/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/products/*/images/**").hasRole("ADMIN")
 
-                        // -----------------------------------------------
-                        // PRODUCT / CATEGORY / IMAGE MANAGEMENT
-                        // ADMIN ONLY
-                        // -----------------------------------------------
-
-                        .requestMatchers(
-                                HttpMethod.POST,
-                                "/api/products/**",
-                                "/api/categories/**",
-                                "/api/images/**"
-                        ).hasRole("ADMIN")
-
-                        .requestMatchers(
-                                HttpMethod.PUT,
-                                "/api/products/**",
-                                "/api/categories/**",
-                                "/api/images/**"
-                        ).hasRole("ADMIN")
-
-                        .requestMatchers(
-                                HttpMethod.DELETE,
-                                "/api/products/**",
-                                "/api/categories/**",
-                                "/api/images/**"
-                        ).hasRole("ADMIN")
-
-                        // -----------------------------------------------
-                        // ADMIN MODULE
-                        // -----------------------------------------------
-
-                        .requestMatchers("/api/admin/**")
-                        .hasRole("ADMIN")
-
-                        // -----------------------------------------------
-                        // CUSTOMER MODULE
-                        // -----------------------------------------------
-
-                        .requestMatchers(
-                                "/api/cart/**",
-                                "/api/orders/**"
-                        ).hasAnyRole("CUSTOMER", "ADMIN")
-
-                        // -----------------------------------------------
-                        // EVERYTHING ELSE
-                        // -----------------------------------------------
-
-                        .anyRequest()
-                        .authenticated()
+                        .anyRequest().authenticated()
                 )
-
-                // =====================================================
-                // JWT Filter
-                // =====================================================
-
                 .addFilterBefore(
                         jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class
@@ -162,7 +71,6 @@ public class SecurityConfig {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-
         return new BCryptPasswordEncoder();
     }
 
@@ -170,7 +78,6 @@ public class SecurityConfig {
     public AuthenticationManager authenticationManager(
             AuthenticationConfiguration configuration
     ) throws Exception {
-
         return configuration.getAuthenticationManager();
     }
 }

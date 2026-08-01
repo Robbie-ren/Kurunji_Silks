@@ -1,6 +1,8 @@
 package com.backend.auth.exception;
 
-public class EmailAlreadyExistsException extends RuntimeException {
+import com.backend.common.exception.DuplicateResourceException;
+
+public class EmailAlreadyExistsException extends DuplicateResourceException {
 
     public EmailAlreadyExistsException(String message) {
         super(message);

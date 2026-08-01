@@ -1,6 +1,8 @@
 package com.backend.product.exception;
 
-public class ProductNotFoundException extends RuntimeException {
+import com.backend.common.exception.ResourceNotFoundException;
+
+public class ProductNotFoundException extends ResourceNotFoundException {
 
     public ProductNotFoundException(String message) {
         super(message);

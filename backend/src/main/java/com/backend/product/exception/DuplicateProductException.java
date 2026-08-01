@@ -1,6 +1,8 @@
 package com.backend.product.exception;
 
-public class DuplicateProductException extends RuntimeException {
+import com.backend.common.exception.DuplicateResourceException;
+
+public class DuplicateProductException extends DuplicateResourceException {
 
     public DuplicateProductException(String message) {
         super(message);

@@ -1,6 +1,8 @@
 package com.backend.category.exception;
 
-public class CategoryNotFoundException extends RuntimeException {
+import com.backend.common.exception.ResourceNotFoundException;
+
+public class CategoryNotFoundException extends ResourceNotFoundException {
 
     public CategoryNotFoundException(String message) {
         super(message);

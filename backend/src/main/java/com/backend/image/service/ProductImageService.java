@@ -1,6 +1,7 @@
 package com.backend.image.service;
 
 import com.backend.image.dto.response.ProductImageResponse;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -8,7 +9,7 @@ public interface ProductImageService {
 
     ProductImageResponse addImage(
             Long productId,
-            String imageUrl,
+            MultipartFile file,
             Boolean mainImage
     );
 
@@ -17,6 +18,7 @@ public interface ProductImageService {
     );
 
     ProductImageResponse getImageById(
+            Long productId,
             Long imageId
     );
 
@@ -25,6 +27,7 @@ public interface ProductImageService {
     );
 
     void deleteImage(
+            Long productId,
             Long imageId
     );
 }
