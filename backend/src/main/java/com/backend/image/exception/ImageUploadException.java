@@ -1,6 +1,8 @@
 package com.backend.image.exception;
 
-public class ImageUploadException extends RuntimeException {
+import com.backend.common.exception.BusinessValidationException;
+
+public class ImageUploadException extends BusinessValidationException {
 
     public ImageUploadException(String message) {
         super(message);

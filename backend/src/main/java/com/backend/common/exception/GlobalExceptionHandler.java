@@ -1,5 +1,6 @@
 package com.backend.common.exception;
 
+import com.backend.auth.exception.InvalidCredentialsException;
 import com.backend.common.dto.ApiResponse;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
@@ -17,149 +18,103 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    // ============================================================
-    // RESOURCE NOT FOUND (404)
-    // ============================================================
-
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ApiResponse<Object>> handleResourceNotFound(
             ResourceNotFoundException exception
     ) {
-
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(ApiResponse.builder()
-                        .success(false)
-                        .message(exception.getMessage())
-                        .data(null)
-                        .build());
+        return buildResponse(HttpStatus.NOT_FOUND, exception.getMessage(), null);
     }
-
-    // ============================================================
-    // DUPLICATE RESOURCE (409)
-    // ============================================================
 
     @ExceptionHandler(DuplicateResourceException.class)
     public ResponseEntity<ApiResponse<Object>> handleDuplicateResource(
             DuplicateResourceException exception
     ) {
-
-        return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(ApiResponse.builder()
-                        .success(false)
-                        .message(exception.getMessage())
-                        .data(null)
-                        .build());
+        return buildResponse(HttpStatus.CONFLICT, exception.getMessage(), null);
     }
-
-    // ============================================================
-    // BUSINESS VALIDATION (400)
-    // ============================================================
 
     @ExceptionHandler(BusinessValidationException.class)
     public ResponseEntity<ApiResponse<Object>> handleBusinessValidation(
             BusinessValidationException exception
     ) {
-
-        return ResponseEntity.badRequest()
-                .body(ApiResponse.builder()
-                        .success(false)
-                        .message(exception.getMessage())
-                        .data(null)
-                        .build());
+        return buildResponse(HttpStatus.BAD_REQUEST, exception.getMessage(), null);
     }
 
-    // ============================================================
-    // DTO VALIDATION (@Valid)
-    // ============================================================
-
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiResponse<Object>> handleValidation(
-            MethodArgumentNotValidException exception
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ResponseEntity<ApiResponse<Object>> handleInvalidCredentials(
+            InvalidCredentialsException exception
     ) {
-
-        Map<String, String> errors = new LinkedHashMap<>();
-
-        for (FieldError error : exception.getBindingResult().getFieldErrors()) {
-
-            errors.put(
-                    error.getField(),
-                    error.getDefaultMessage()
-            );
-        }
-
-        return ResponseEntity.badRequest()
-                .body(ApiResponse.builder()
-                        .success(false)
-                        .message("Validation failed")
-                        .data(errors)
-                        .build());
+        return buildResponse(HttpStatus.UNAUTHORIZED, "Invalid email or password", null);
     }
-
-    // ============================================================
-    // CONSTRAINT VALIDATION
-    // ============================================================
-
-    @ExceptionHandler(ConstraintViolationException.class)
-    public ResponseEntity<ApiResponse<Object>> handleConstraintViolation(
-            ConstraintViolationException exception
-    ) {
-
-        return ResponseEntity.badRequest()
-                .body(ApiResponse.builder()
-                        .success(false)
-                        .message(exception.getMessage())
-                        .data(null)
-                        .build());
-    }
-
-    // ============================================================
-    // INVALID LOGIN
-    // ============================================================
 
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<ApiResponse<Object>> handleBadCredentials(
             BadCredentialsException exception
     ) {
-
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(ApiResponse.builder()
-                        .success(false)
-                        .message("Invalid email or password")
-                        .data(null)
-                        .build());
+        return buildResponse(HttpStatus.UNAUTHORIZED, "Invalid email or password", null);
     }
 
-    // ============================================================
-    // ACCESS DENIED
-    // ============================================================
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiResponse<Object>> handleValidation(
+            MethodArgumentNotValidException exception
+    ) {
+        Map<String, String> errors = new LinkedHashMap<>();
+
+        for (FieldError error : exception.getBindingResult().getFieldErrors()) {
+            errors.put(error.getField(), error.getDefaultMessage());
+        }
+
+        return buildResponse(HttpStatus.BAD_REQUEST, "Validation failed", errors);
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ApiResponse<Object>> handleConstraintViolation(
+            ConstraintViolationException exception
+    ) {
+        return buildResponse(HttpStatus.BAD_REQUEST, exception.getMessage(), null);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ApiResponse<Object>> handleIllegalArgument(
+            IllegalArgumentException exception
+    ) {
+        return buildResponse(HttpStatus.BAD_REQUEST, exception.getMessage(), null);
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ApiResponse<Object>> handleIllegalState(
+            IllegalStateException exception
+    ) {
+        return buildResponse(HttpStatus.BAD_REQUEST, exception.getMessage(), null);
+    }
 
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ApiResponse<Object>> handleAccessDenied(
             AccessDeniedException exception
     ) {
-
-        return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(ApiResponse.builder()
-                        .success(false)
-                        .message("Access denied")
-                        .data(null)
-                        .build());
+        return buildResponse(HttpStatus.FORBIDDEN, "Access denied", null);
     }
-
-    // ============================================================
-    // ANY OTHER ERROR
-    // ============================================================
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Object>> handleException(
             Exception exception
     ) {
+        return buildResponse(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "Something went wrong. Please contact support.",
+                null
+        );
+    }
 
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+    private ResponseEntity<ApiResponse<Object>> buildResponse(
+            HttpStatus status,
+            String message,
+            Object data
+    ) {
+        return ResponseEntity.status(status)
                 .body(ApiResponse.builder()
                         .success(false)
-                        .message("Something went wrong")
-                        .data(null)
+                        .message(message)
+                        .data(data)
                         .build());
     }
 }

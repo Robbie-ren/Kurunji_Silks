@@ -17,6 +17,7 @@ import com.backend.order.repository.*;
 import com.backend.order.service.OrderService;
 import com.backend.product.entity.Product;
 import com.backend.product.repository.ProductRepository;
+import com.backend.product.exception.InsufficientStockException;
 
 import lombok.RequiredArgsConstructor;
 
@@ -130,21 +131,26 @@ public class OrderServiceImpl implements OrderService {
 
         for (CartItem cartItem : cartItems) {
 
-            Product product = cartItem.getProduct();
+            Product product = productRepository.findByIdForUpdate(
+                            cartItem.getProduct().getId()
+                    )
+                    .orElseThrow(() ->
+                            new OrderNotFoundException(
+                                    "Product not found with id: " + cartItem.getProduct().getId()
+                            )
+                    );
 
             if (!Boolean.TRUE.equals(product.getActive())) {
-                throw new IllegalStateException(
-                        "Product is no longer active: "
-                                + product.getName()
+                throw new InvalidOrderStatusException(
+                        "Product is no longer active: " + product.getName()
                 );
             }
 
             if (cartItem.getQuantity() >
                     product.getStockQuantity()) {
 
-                throw new IllegalStateException(
-                        "Insufficient stock for product: "
-                                + product.getName()
+                throw new InsufficientStockException(
+                        "Insufficient stock for product: " + product.getName()
                 );
             }
 
@@ -307,11 +313,17 @@ public class OrderServiceImpl implements OrderService {
         // Return stock
         for (OrderItem item : items) {
 
-            Product product = item.getProduct();
+            Product product = productRepository.findByIdForUpdate(
+                            item.getProduct().getId()
+                    )
+                    .orElseThrow(() ->
+                            new OrderNotFoundException(
+                                    "Product not found with id: " + item.getProduct().getId()
+                            )
+                    );
 
             product.setStockQuantity(
-                    product.getStockQuantity()
-                            + item.getQuantity()
+                    product.getStockQuantity() + item.getQuantity()
             );
 
             productRepository.save(product);
@@ -321,9 +333,11 @@ public class OrderServiceImpl implements OrderService {
                 OrderStatus.CANCELLED
         );
 
-        order.setPaymentStatus(
-                PaymentStatus.REFUNDED
-        );
+        if (order.getPaymentStatus() == PaymentStatus.PAID) {
+            order.setPaymentStatus(PaymentStatus.REFUNDED);
+        } else {
+            order.setPaymentStatus(PaymentStatus.FAILED);
+        }
 
         orderRepository.save(order);
 

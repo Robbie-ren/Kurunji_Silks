@@ -1,6 +1,8 @@
 package com.backend.product.exception;
 
-public class InvalidProductException extends RuntimeException {
+import com.backend.common.exception.BusinessValidationException;
+
+public class InvalidProductException extends BusinessValidationException {
 
     public InvalidProductException(String message) {
         super(message);
