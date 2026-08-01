@@ -3,82 +3,155 @@ package com.backend.security;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfigurationSource;
 
 @Configuration
 @RequiredArgsConstructor
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final CorsConfigurationSource corsConfigurationSource;
 
     @Bean
-    public SecurityFilterChain securityFilterChain(
-            HttpSecurity http
-    ) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http)
+            throws Exception {
 
         http
 
-                // Disable CSRF
-                .csrf(csrf -> csrf.disable())
+                // =====================================================
+                // CORS
+                // =====================================================
 
+                .cors(cors -> cors.configurationSource(corsConfigurationSource))
+
+                // =====================================================
+                // Disable CSRF (JWT Authentication)
+                // =====================================================
+
+                .csrf(AbstractHttpConfigurer::disable)
+
+                // =====================================================
                 // Stateless Session
+                // =====================================================
+
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(
                                 SessionCreationPolicy.STATELESS
                         )
                 )
 
+                // =====================================================
                 // Authorization Rules
+                // =====================================================
+
                 .authorizeHttpRequests(auth -> auth
 
-                        // Public APIs
-                        .requestMatchers(
-                                "/api/auth/**"
-                        ).permitAll()
+                        // -----------------------------------------------
+                        // Allow Browser CORS Preflight
+                        // -----------------------------------------------
 
+                        .requestMatchers(HttpMethod.OPTIONS, "/**")
+                        .permitAll()
+
+                        // -----------------------------------------------
+                        // Authentication APIs
+                        // -----------------------------------------------
+
+                        .requestMatchers("/api/auth/**")
+                        .permitAll()
+
+                        // -----------------------------------------------
                         // Swagger
+                        // -----------------------------------------------
+
                         .requestMatchers(
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/v3/api-docs/**"
                         ).permitAll()
 
-                        // Error Page
+                        // -----------------------------------------------
+                        // Spring Error Endpoint
+                        // -----------------------------------------------
+
+                        .requestMatchers("/error")
+                        .permitAll()
+
+                        // -----------------------------------------------
+                        // PUBLIC PRODUCT BROWSING
+                        // -----------------------------------------------
+
                         .requestMatchers(
-                                "/error"
+                                HttpMethod.GET,
+                                "/api/products/**",
+                                "/api/categories/**",
+                                "/api/images/**"
                         ).permitAll()
 
-                        // Admin APIs
+                        // -----------------------------------------------
+                        // PRODUCT / CATEGORY / IMAGE MANAGEMENT
+                        // ADMIN ONLY
+                        // -----------------------------------------------
+
                         .requestMatchers(
-                                "/api/admin/**"
+                                HttpMethod.POST,
+                                "/api/products/**",
+                                "/api/categories/**",
+                                "/api/images/**"
                         ).hasRole("ADMIN")
 
-                        // Customer APIs
+                        .requestMatchers(
+                                HttpMethod.PUT,
+                                "/api/products/**",
+                                "/api/categories/**",
+                                "/api/images/**"
+                        ).hasRole("ADMIN")
+
+                        .requestMatchers(
+                                HttpMethod.DELETE,
+                                "/api/products/**",
+                                "/api/categories/**",
+                                "/api/images/**"
+                        ).hasRole("ADMIN")
+
+                        // -----------------------------------------------
+                        // ADMIN MODULE
+                        // -----------------------------------------------
+
+                        .requestMatchers("/api/admin/**")
+                        .hasRole("ADMIN")
+
+                        // -----------------------------------------------
+                        // CUSTOMER MODULE
+                        // -----------------------------------------------
+
                         .requestMatchers(
                                 "/api/cart/**",
                                 "/api/orders/**"
                         ).hasAnyRole("CUSTOMER", "ADMIN")
 
-                        // Product & Category APIs
-                        .requestMatchers(
-                                "/api/products/**",
-                                "/api/categories/**",
-                                "/api/images/**"
-                        ).authenticated()
+                        // -----------------------------------------------
+                        // EVERYTHING ELSE
+                        // -----------------------------------------------
 
-                        // Any Remaining API
                         .anyRequest()
                         .authenticated()
                 )
 
+                // =====================================================
                 // JWT Filter
+                // =====================================================
+
                 .addFilterBefore(
                         jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class

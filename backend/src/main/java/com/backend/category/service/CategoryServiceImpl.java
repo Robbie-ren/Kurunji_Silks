@@ -5,9 +5,14 @@ import com.backend.category.dto.request.CategoryUpdateRequest;
 import com.backend.category.dto.response.CategoryResponse;
 import com.backend.category.entity.Category;
 import com.backend.category.repository.CategoryRepository;
+import com.backend.common.dto.PageResponse;
+import com.backend.common.exception.BusinessValidationException;
+import com.backend.common.exception.ResourceNotFoundException;
 
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,7 +25,6 @@ public class CategoryServiceImpl implements CategoryService {
 
     private final CategoryRepository categoryRepository;
 
-
     // ============================================================
     // CREATE CATEGORY
     // ============================================================
@@ -31,7 +35,7 @@ public class CategoryServiceImpl implements CategoryService {
     ) {
 
         if (categoryRepository.existsByNameIgnoreCase(request.getName())) {
-            throw new RuntimeException(
+            throw new BusinessValidationException(
                     "Category already exists with name: "
                             + request.getName()
             );
@@ -49,21 +53,35 @@ public class CategoryServiceImpl implements CategoryService {
         return mapToResponse(savedCategory);
     }
 
-
     // ============================================================
     // GET ALL ACTIVE CATEGORIES
     // ============================================================
 
     @Override
     @Transactional(readOnly = true)
-    public List<CategoryResponse> getAllCategories() {
+    public PageResponse<CategoryResponse> getAllCategories(
+            Pageable pageable
+    ) {
 
-        return categoryRepository.findByActiveTrue()
-                .stream()
-                .map(this::mapToResponse)
-                .toList();
+        Page<Category> categoryPage =
+                categoryRepository.findByActiveTrue(pageable);
+
+        List<CategoryResponse> content =
+                categoryPage.getContent()
+                        .stream()
+                        .map(this::mapToResponse)
+                        .toList();
+
+        return PageResponse.<CategoryResponse>builder()
+                .content(content)
+                .pageNumber(categoryPage.getNumber())
+                .pageSize(categoryPage.getSize())
+                .totalElements(categoryPage.getTotalElements())
+                .totalPages(categoryPage.getTotalPages())
+                .first(categoryPage.isFirst())
+                .last(categoryPage.isLast())
+                .build();
     }
-
 
     // ============================================================
     // GET CATEGORY BY ID
@@ -78,14 +96,13 @@ public class CategoryServiceImpl implements CategoryService {
         Category category =
                 categoryRepository.findById(id)
                         .orElseThrow(() ->
-                                new RuntimeException(
+                                new ResourceNotFoundException(
                                         "Category not found with id: " + id
                                 )
                         );
 
         return mapToResponse(category);
     }
-
 
     // ============================================================
     // UPDATE CATEGORY
@@ -100,19 +117,15 @@ public class CategoryServiceImpl implements CategoryService {
         Category category =
                 categoryRepository.findById(id)
                         .orElseThrow(() ->
-                                new RuntimeException(
+                                new ResourceNotFoundException(
                                         "Category not found with id: " + id
                                 )
                         );
 
-        if (!category.getName()
-                .equalsIgnoreCase(request.getName())
-                &&
-                categoryRepository.existsByNameIgnoreCase(
-                        request.getName()
-                )) {
+        if (!category.getName().equalsIgnoreCase(request.getName())
+                && categoryRepository.existsByNameIgnoreCase(request.getName())) {
 
-            throw new RuntimeException(
+            throw new BusinessValidationException(
                     "Category already exists with name: "
                             + request.getName()
             );
@@ -131,9 +144,8 @@ public class CategoryServiceImpl implements CategoryService {
         return mapToResponse(updatedCategory);
     }
 
-
     // ============================================================
-    // DELETE CATEGORY
+    // DELETE CATEGORY (SOFT DELETE)
     // ============================================================
 
     @Override
@@ -144,17 +156,15 @@ public class CategoryServiceImpl implements CategoryService {
         Category category =
                 categoryRepository.findById(id)
                         .orElseThrow(() ->
-                                new RuntimeException(
+                                new ResourceNotFoundException(
                                         "Category not found with id: " + id
                                 )
                         );
 
-        // Soft delete
         category.setActive(false);
 
         categoryRepository.save(category);
     }
-
 
     // ============================================================
     // ENTITY -> RESPONSE

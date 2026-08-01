@@ -1,8 +1,7 @@
 package com.backend.product.controller;
 
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-
 import com.backend.common.dto.PageResponse;
+import com.backend.common.exception.BusinessValidationException;
 import com.backend.product.dto.request.ProductCreateRequest;
 import com.backend.product.dto.request.ProductUpdateRequest;
 import com.backend.product.dto.response.ProductResponse;
@@ -12,8 +11,8 @@ import jakarta.validation.Valid;
 
 import lombok.RequiredArgsConstructor;
 
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -24,11 +23,11 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/products")
 @RequiredArgsConstructor
-@SecurityRequirement(name = "Bearer Authentication")
 public class ProductController {
 
-    private final ProductService productService;
+    private static final int MAX_PAGE_SIZE = 50;
 
+    private final ProductService productService;
 
     // ============================================================
     // CREATE PRODUCT
@@ -38,17 +37,15 @@ public class ProductController {
     public ResponseEntity<ProductResponse> createProduct(
             @Valid @RequestBody ProductCreateRequest request) {
 
-        ProductResponse response =
-                productService.createProduct(request);
+        ProductResponse response = productService.createProduct(request);
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(response);
     }
 
-
     // ============================================================
-    // GET ALL ACTIVE PRODUCTS
+    // GET ALL PRODUCTS
     // ============================================================
 
     @GetMapping
@@ -56,15 +53,12 @@ public class ProductController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
-        Pageable pageable =
-                PageRequest.of(page, size);
+        Pageable pageable = PageRequest.of(page, Math.min(size, MAX_PAGE_SIZE));
 
-        PageResponse<ProductResponse> response =
-                productService.getAllProducts(pageable);
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(
+                productService.getAllProducts(pageable)
+        );
     }
-
 
     // ============================================================
     // GET PRODUCT BY ID
@@ -74,12 +68,10 @@ public class ProductController {
     public ResponseEntity<ProductResponse> getProductById(
             @PathVariable Long id) {
 
-        ProductResponse response =
-                productService.getProductById(id);
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(
+                productService.getProductById(id)
+        );
     }
-
 
     // ============================================================
     // UPDATE PRODUCT
@@ -90,12 +82,10 @@ public class ProductController {
             @PathVariable Long id,
             @Valid @RequestBody ProductUpdateRequest request) {
 
-        ProductResponse response =
-                productService.updateProduct(id, request);
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(
+                productService.updateProduct(id, request)
+        );
     }
-
 
     // ============================================================
     // DELETE PRODUCT
@@ -110,7 +100,6 @@ public class ProductController {
         return ResponseEntity.noContent().build();
     }
 
-
     // ============================================================
     // GET PRODUCTS BY CATEGORY
     // ============================================================
@@ -121,21 +110,15 @@ public class ProductController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
-        Pageable pageable =
-                PageRequest.of(page, size);
+        Pageable pageable = PageRequest.of(page, Math.min(size, MAX_PAGE_SIZE));
 
-        PageResponse<ProductResponse> response =
-                productService.getProductsByCategory(
-                        categoryId,
-                        pageable
-                );
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(
+                productService.getProductsByCategory(categoryId, pageable)
+        );
     }
 
-
     // ============================================================
-    // SEARCH PRODUCTS BY NAME
+    // SEARCH PRODUCTS
     // ============================================================
 
     @GetMapping("/search")
@@ -144,18 +127,12 @@ public class ProductController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
-        Pageable pageable =
-                PageRequest.of(page, size);
+        Pageable pageable = PageRequest.of(page, Math.min(size, MAX_PAGE_SIZE));
 
-        PageResponse<ProductResponse> response =
-                productService.searchProducts(
-                        name,
-                        pageable
-                );
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(
+                productService.searchProducts(name, pageable)
+        );
     }
-
 
     // ============================================================
     // FILTER BY FABRIC
@@ -167,18 +144,12 @@ public class ProductController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
-        Pageable pageable =
-                PageRequest.of(page, size);
+        Pageable pageable = PageRequest.of(page, Math.min(size, MAX_PAGE_SIZE));
 
-        PageResponse<ProductResponse> response =
-                productService.getProductsByFabric(
-                        fabric,
-                        pageable
-                );
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(
+                productService.getProductsByFabric(fabric, pageable)
+        );
     }
-
 
     // ============================================================
     // FILTER BY COLOR
@@ -190,18 +161,12 @@ public class ProductController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
-        Pageable pageable =
-                PageRequest.of(page, size);
+        Pageable pageable = PageRequest.of(page, Math.min(size, MAX_PAGE_SIZE));
 
-        PageResponse<ProductResponse> response =
-                productService.getProductsByColor(
-                        color,
-                        pageable
-                );
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(
+                productService.getProductsByColor(color, pageable)
+        );
     }
-
 
     // ============================================================
     // FILTER BY OCCASION
@@ -213,18 +178,12 @@ public class ProductController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
-        Pageable pageable =
-                PageRequest.of(page, size);
+        Pageable pageable = PageRequest.of(page, Math.min(size, MAX_PAGE_SIZE));
 
-        PageResponse<ProductResponse> response =
-                productService.getProductsByOccasion(
-                        occasion,
-                        pageable
-                );
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(
+                productService.getProductsByOccasion(occasion, pageable)
+        );
     }
-
 
     // ============================================================
     // FILTER BY PRICE RANGE
@@ -237,19 +196,22 @@ public class ProductController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
-        Pageable pageable =
-                PageRequest.of(page, size);
+        if (minPrice.compareTo(maxPrice) > 0) {
+            throw new BusinessValidationException(
+                    "Minimum price cannot be greater than maximum price."
+            );
+        }
 
-        PageResponse<ProductResponse> response =
+        Pageable pageable = PageRequest.of(page, Math.min(size, MAX_PAGE_SIZE));
+
+        return ResponseEntity.ok(
                 productService.getProductsByPriceRange(
                         minPrice,
                         maxPrice,
                         pageable
-                );
-
-        return ResponseEntity.ok(response);
+                )
+        );
     }
-
 
     // ============================================================
     // LOW STOCK PRODUCTS
@@ -259,9 +221,14 @@ public class ProductController {
     public ResponseEntity<List<ProductResponse>> getLowStockProducts(
             @RequestParam(defaultValue = "5") Integer quantity) {
 
-        List<ProductResponse> response =
-                productService.getLowStockProducts(quantity);
+        if (quantity <= 0) {
+            throw new BusinessValidationException(
+                    "Quantity must be greater than zero."
+            );
+        }
 
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(
+                productService.getLowStockProducts(quantity)
+        );
     }
 }
