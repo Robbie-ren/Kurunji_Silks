@@ -11,10 +11,22 @@ import com.backend.product.repository.ProductRepository;
 
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.UUID;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -23,7 +35,8 @@ public class ProductImageServiceImpl implements ProductImageService {
 
     private final ProductImageRepository productImageRepository;
     private final ProductRepository productRepository;
-
+    @Value("${app.file.upload-dir}")
+    private String uploadDir;
 
     // ============================================================
     // ADD IMAGE
@@ -32,14 +45,12 @@ public class ProductImageServiceImpl implements ProductImageService {
     @Override
     public ProductImageResponse addImage(
             Long productId,
-            String imageUrl,
+            MultipartFile file,
             Boolean mainImage
     ) {
 
-        if (imageUrl == null || imageUrl.isBlank()) {
-            throw new ImageUploadException(
-                    "Image URL is required"
-            );
+        if (file == null || file.isEmpty()) {
+            throw new ImageUploadException("Image file is required.");
         }
 
         Product product = productRepository.findById(productId)
@@ -63,9 +74,37 @@ public class ProductImageServiceImpl implements ProductImageService {
                     });
         }
 
+        String originalFilename = file.getOriginalFilename();
+
+        String extension = "";
+
+        if (originalFilename != null && originalFilename.contains(".")) {
+            extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+        }
+
+        String filename = UUID.randomUUID().toString() + extension;
+
+        try {
+
+            Path uploadPath = Paths.get(uploadDir);
+
+            if (!Files.exists(uploadPath)) {
+                Files.createDirectories(uploadPath);
+            }
+
+            Files.copy(
+                    file.getInputStream(),
+                    uploadPath.resolve(filename),
+                    StandardCopyOption.REPLACE_EXISTING
+            );
+
+        } catch (IOException e) {
+            throw new ImageUploadException("Failed to upload image.");
+        }
+
         ProductImage productImage = ProductImage.builder()
                 .product(product)
-                .imageUrl(imageUrl)
+                .imageUrl("/uploads/" + filename)
                 .mainImage(isMainImage)
                 .build();
 
@@ -107,6 +146,7 @@ public class ProductImageServiceImpl implements ProductImageService {
     @Override
     @Transactional(readOnly = true)
     public ProductImageResponse getImageById(
+            Long productId,
             Long imageId
     ) {
 
@@ -158,11 +198,14 @@ public class ProductImageServiceImpl implements ProductImageService {
 
     @Override
     public void deleteImage(
+            Long productId,
             Long imageId
-    ) {
+    ){
 
         ProductImage image =
-                productImageRepository.findById(imageId)
+                productImageRepository.findByIdAndProductId(
+                                imageId,
+                                productId)
                         .orElseThrow(() ->
                                 new ResourceNotFoundException(
                                         "Image not found with id: " + imageId

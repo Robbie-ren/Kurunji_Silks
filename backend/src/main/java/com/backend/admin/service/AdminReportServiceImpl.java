@@ -12,6 +12,8 @@ import com.backend.order.repository.OrderRepository;
 import com.backend.product.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -64,18 +66,27 @@ public class AdminReportServiceImpl implements AdminReportService {
     }
 
     @Override
-    public List<CustomerReportResponse> getCustomerReport() {
-        Map<Long, Object[]> orderSummaryByUserId = orderRepository.getCustomerOrderSummary()
-                .stream()
-                .collect(Collectors.toMap(
-                        row -> (Long) row[0],
-                        row -> row
-                ));
+    public Page<CustomerReportResponse> getCustomerReport(
+            int page,
+            int size
+    ) {
 
-        return userRepository.findAll()
-                .stream()
-                .map(user -> buildCustomerReport(user, orderSummaryByUserId.get(user.getId())))
-                .toList();
+        Map<Long, Object[]> orderSummaryByUserId =
+                orderRepository.getCustomerOrderSummary()
+                        .stream()
+                        .collect(Collectors.toMap(
+                                row -> (Long) row[0],
+                                row -> row
+                        ));
+
+        return userRepository
+                .findAll(PageRequest.of(page, size))
+                .map(user ->
+                        buildCustomerReport(
+                                user,
+                                orderSummaryByUserId.get(user.getId())
+                        )
+                );
     }
 
     private CustomerReportResponse buildCustomerReport(User user, Object[] summary) {
